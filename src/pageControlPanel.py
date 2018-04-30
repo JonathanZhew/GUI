@@ -17,7 +17,7 @@ class ControlPanel(QWidget):
         grid.addWidget(QLineEdit(),1,1)
         grid.addWidget(QLabel('hello'),2,1)
         
-        meter = CMeter('HV1')
+        meter = CMeter(' HV1 ')
         vbox=QVBoxLayout()
         vbox.addWidget(meter) 
         vbox.addStretch(1)
