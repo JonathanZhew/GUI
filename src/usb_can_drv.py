@@ -10,7 +10,7 @@ CANIndex = 0
 DevType = ControlCAN.VCI_USBCAN2
 class Usb2CanDev():
     def __init__(self):
-        print("new Usb2CanDev")
+        print("Initial Usb2CanDev")
         super(Usb2CanDev, self).__init__()
         self.__isopen = False
         self.frame = b''

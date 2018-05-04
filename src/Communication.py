@@ -3,6 +3,7 @@ Created on Apr 23, 2018
 
 @author: zhenfengzhao
 '''
+import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
@@ -10,19 +11,25 @@ from HmiProtocol import HmiProtocol
 from usb_can_drv import Usb2CanDev
 from pcie_drv import PcieDriver
 
-class CMessenger(Usb2CanDev):
-    def __init__(self):   
+class CMessenger(HmiProtocol):
+    def __init__(self, FrameMaker = None):   
         super(CMessenger, self).__init__()     
+        self.maker = FrameMaker
         self.__name = ''
         self.__isopen = False
         self.__dev = None
+        self.__devUsb = Usb2CanDev()
+        try:
+            self.__devPCIe = PcieDriver(1600)
+        except:
+            print("Initial PcieDriver error:", sys.exc_info()[0])
  
     def open(self, name = 'USB-CAN'):
         self.__name = name
         #pcie
         if(self.__name == 'PCIe'):
             try:
-                self.__dev = PcieDriver(1600)
+                self.__dev = self.__devPCIe
                 self.__dev.open()
             except:
                 QMessageBox.question(self, 'error', "Fail to open PCIe", QMessageBox.Ok, QMessageBox.Ok)
@@ -30,7 +37,7 @@ class CMessenger(Usb2CanDev):
                 self.__isopen = True                    
         #usb-can        
         elif(self.__name == 'USB-CAN'):
-            self.__dev = Usb2CanDev()
+            self.__dev = self.__devUsb
             self.__isopen = self.__dev.open()
             print('open', self.__name, self.__isopen)
             
@@ -55,4 +62,14 @@ class CMessenger(Usb2CanDev):
         
     def is_open(self):
         return self.__isopen
+    
+    def setValue(self, cmd, value, vtype='d'):
+        frame = self.maker.setValue(self, cmd, value, vtype)
+        self.write(frame)
+    
+    def requestValue(self, cmd):
+        frame = self.maker.requestValue(cmd)
+        self.write(frame)
+    
+    
     

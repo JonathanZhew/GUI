@@ -4,6 +4,23 @@ import datetime
     
 byteorder = 'little'
 
+class CStructAck():
+    def __init__(self, head_section):
+        head = struct.unpack('I', head_section)        
+        self.err = head[6]
+        self.cmd = head[5]
+        self.length = head[4]
+        self.sequence = head[7]
+        
+class CStructSend():
+    def __init__(self, head_section):
+        head = struct.unpack('I', head_section)        
+        self.err = 0
+        self.cmd = head[1]
+        self.length = head[4]
+        self.sequence = head[7]
+
+
 class HmiProtocol():
     def __init__(self):
         self.__Source     =0
@@ -45,9 +62,21 @@ class HmiProtocol():
     def requestValue(self, cmdId):
         return self.__make_frame(cmdId, b'', 0)
 
-    def parseMag(self, mag):
-        return 1688
+    def parseAck(self, head_section):
+        return CStructAck(head_section)
     
+    def unpack(self, type, buf):
+        if(type == 'd'):
+            value = struct.unpack('d', buf[0:8])[0]
+        elif(type == 't'):
+            value = buf.decode('ascii')
+        elif(type == 'e') or (type == 'i'):                    
+            value = struct.unpack('I',buf[0:4])[0]
+        else:
+            value = buf
+        
+        return value
+            
 if __name__ == '__main__':
     lst = HmiProtocol()
     frame = lst.setValue(4004, 'hello', 't')    

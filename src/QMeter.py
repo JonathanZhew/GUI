@@ -17,22 +17,17 @@ class CAxis():
         self.color = color
 
 class CScale(QWidget):
-    def __init__(self, width=5, height=30):
+    def __init__(self, RtRead):
         super().__init__()
-        self.__width = width
-        self.__height = height
-        self.__maxvalue = 100
-        self.__minvalue = 0
+        self.__maxvalue = RtRead['max']
+        self.__minvalue = RtRead['min']
         self.__value = 0
-        self.__step = 10
         self.__axis = {}
         
-        self.ValidRange = QPoint(20,50)
-
-        self.initUI()
-        
-        self.setAxis('alarm', 50, str(50), QColor(255, 255, 255))
-
+        self.ValidRange = RtRead['valid']
+        self.setAxis('min', self.ValidRange.x(), str(self.ValidRange.x()), QColor(255, 255, 255))
+        self.setAxis('max', self.ValidRange.y(), str(self.ValidRange.y()), QColor(255, 255, 255))
+        self.initUI()  
         
     def initUI(self):
         self.setMinimumSize(10, 30)
@@ -69,9 +64,7 @@ class CScale(QWidget):
         
         metrics = qp.fontMetrics()
             
-        qp.drawLine(0, 0, 0, height)
-        
-        cell = round(height/self.__step)
+        qp.drawLine(0, 0, 0, height)        
         qp.drawText(cw, 0, str(self.__maxvalue))
         
         qp.drawLine(0, height-1, cw, height-1)
@@ -84,16 +77,18 @@ class CScale(QWidget):
         mw= metrics.width(str(self.__maxvalue))
         self.setMinimumWidth(mw+cw)
         
-        for stair in range(cell, height, cell):
-            y = height - stair
-            qp.drawLine(0, y, cw, y)
+        for i in range(0, 10):
+            y = height*i/10
+            #print(y)
+            qp.drawLine(0, y, cw*2/3, y)
             #metrics = qp.fontMetrics()
             #fw = metrics.width(str(self.num[j]))
             #qp.drawText(i-fw/2, h/2, str(self.num[j]))
             
         for key in self.__axis:
             axis = self.__axis[key]
-            y = (height - height*(axis.value - self.__minvalue)/(self.__maxvalue- self.__minvalue))
+            y = (height - (height*(axis.value - self.__minvalue)/(self.__maxvalue - self.__minvalue)))
+            #print(axis.value)
             qp.drawText(cw, y+ma/2, str(axis.text))
     
     def setAxis(self, key, value, text, color):        
@@ -101,12 +96,13 @@ class CScale(QWidget):
                 
         
 
-class CMeter(QWidget):
-    def __init__(self, HVObject):        
-        super(CMeter, self).__init__()
-        self.__Obj = HVObject
-        self.__name = 'meter'
-        self.__uint = 'V'
+class QMeter(QWidget):
+    def __init__(self, RtRead):        
+        super(QMeter, self).__init__()
+        self.__Obj = RtRead
+        self.__name = RtRead['name']
+        self.__uint = RtRead['uint']
+        self.__value = 0
         self.__initalLayout()            
         
     def __initalLayout(self):        
@@ -115,7 +111,7 @@ class CMeter(QWidget):
         label.setStyleSheet("color: rgb(15,34,139);")
         label.setAlignment(Qt.AlignHCenter)
         
-        editBox = QLineEdit('18.88')
+        editBox = QLineEdit()
         editBox.setFont(QFont("Arial",32))
         editBox.setStyleSheet("color: rgb(63,72,204);background-color: rgb(242,242,242);")
         editBox.setMaximumWidth(240)
@@ -125,10 +121,10 @@ class CMeter(QWidget):
         progressBar = QProgressBar();
         progressBar.setOrientation(Qt.Vertical)
         progressBar.setMinimumSize(50,360)
-        progressBar.setValue(60)
+        progressBar.setValue(self.__value)
         progressBar.setAlignment(Qt.AlignHCenter)
         #ProgressBar.setTextVisible(True)        
-        scale = CScale(60,360)
+        scale = CScale(self.__Obj)
         hbox=QHBoxLayout()
         hbox.addStretch(1)
         hbox.addWidget(progressBar)
@@ -141,8 +137,8 @@ class CMeter(QWidget):
         vbox.addWidget(editBox, alignment=Qt.AlignCenter)
         self.setLayout(vbox)
         
-    def setValue(self):
-        pass
+    def setValue(self, value):
+        self.__value = value
         
         
         
