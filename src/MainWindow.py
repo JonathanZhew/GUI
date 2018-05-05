@@ -15,7 +15,6 @@ from statusBar import myStatusBar
 from pageControlPanel import ControlPanel
 from CDatabase import RtReadDataBase, CommandDataBase
 from HmiProtocol import HmiProtocol
-import struct
 
 class App(QMainWindow):
  
@@ -32,6 +31,7 @@ class App(QMainWindow):
         #initial backstage
         maker = HmiProtocol()
         self.comm = CMessenger(maker)
+        self.comm.RegisterReciveHandle(self.handleReceive)
         self.comm.open()
              
         self.RtReadList = RtReadDataBase('RtRead.csv')      
@@ -57,35 +57,15 @@ class App(QMainWindow):
         self.showMaximized()   
         
         #Event
-        self.timerMessageHub=QtCore.QTimer()
-        self.timerMessageHub.timeout.connect(self.MessageHub)
-        self.timerMessageHub.start(10)
-        self.count = 0
         self.cmdRtRead = self.CmdList.getItems('RtRead', 'read')
+        self.comm.repeatRequest(self.cmdRtRead)
         
+        #test
+        self.comm.testCallbcak()
         self.fleshDbValue(3131, 1)
-           
-    def MessageHub(self):
-        if not self.comm.is_open():
-            return 
         
-        #read comm
-        self.RecvProcess()
-        
-        self.count = self.count+1        
-        if self.count >= 10:
-            self.count = 0
-            frame = self.comm.requestValue(self.cmdRtRead)
-            self.comm.write(frame)
-        elif len(self.SendQueue):
-            frame = self.self.SendQueue.pop(0)
-            self.comm.write(frame)
-            
-    def RecvProcess(self):               
-        frame = self.comm.read()
-        if len(frame) < 32:
-            return
-        
+                
+    def handleReceive(self, frame): 
         head_section = frame[:32]
         value_section = frame[32: ]
         

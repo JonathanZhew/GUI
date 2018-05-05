@@ -4,6 +4,7 @@ import datetime
     
 byteorder = 'little'
 
+
 class CStructAck():
     def __init__(self, head_section):
         head = struct.unpack('I', head_section)        
@@ -11,6 +12,7 @@ class CStructAck():
         self.cmd = head[5]
         self.length = head[4]
         self.sequence = head[7]
+        self.value = None
         
 class CStructSend():
     def __init__(self, head_section):
@@ -19,7 +21,7 @@ class CStructSend():
         self.cmd = head[1]
         self.length = head[4]
         self.sequence = head[7]
-
+        self.value = None
 
 class HmiProtocol():
     def __init__(self):

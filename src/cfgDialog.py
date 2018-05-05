@@ -98,13 +98,11 @@ class DlgConfigure(QDialog):
         #clear
         for row in self.TargetList:
             row['value'] = None
+            self.comm.requestValue(row['read'])  
             
         for row in self.TripList:
             row['value'] = None
-        
-        frame = self.FrameMaker.requestValue(self.cmdRtRead)
-        self.comm.write(frame)
-            
+            self.comm.requestValue(row['read']) 
             
         return True    
         
