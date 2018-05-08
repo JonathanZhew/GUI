@@ -116,6 +116,6 @@ class CMessenger(HmiProtocol):
         try:          
             self.rcvhandle(Frame) 
         except:
-            print("RecvProcess error:", sys.exc_info())
+            print("testCallbcak error:", sys.exc_info())
 
     

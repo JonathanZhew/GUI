@@ -70,7 +70,7 @@ class myToolBar(QToolBar):
         self.refresLinkStatus()   
    
     def chickbtnCfg(self):
-        dlg = DlgConfigure(self.__comm, self.mainWin.CmdList)
+        dlg = DlgConfigure(self.mainWin.cfgData.cfgList)
         dlg.exec_()     
          
     def chickbtnManual(self):

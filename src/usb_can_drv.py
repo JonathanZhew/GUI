@@ -88,7 +88,7 @@ class Usb2CanDev():
         self.__isopen = False
 
     def is_open(self):
-         return self.__isopen
+        return self.__isopen
 
     def GetDataCallback(self, DeviceIndex,CANIndex, cb_Len =1):
         print(DeviceIndex,CANIndex, cb_Len)
@@ -160,5 +160,4 @@ class Usb2CanDev():
             if(nRet == ControlCAN.STATUS_ERR):
                 ControlCAN.VCI_ResetCAN(DevType,DeviceIndex,CANIndex)
                 print('usb_can_dev write() err')
-				
-				
+                

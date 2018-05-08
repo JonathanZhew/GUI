@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QPro
 from PyQt5.QtGui import QPainter, QFont, QColor, QPen, QIntValidator
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.Qt import QPoint
-
+import re
 
 class CAxis():
     def __init__(self, value, text, color):
@@ -111,12 +111,12 @@ class QMeter(QWidget):
         label.setStyleSheet("color: rgb(15,34,139);")
         label.setAlignment(Qt.AlignHCenter)
         
-        editBox = QLineEdit()
-        editBox.setFont(QFont("Arial",32))
-        editBox.setStyleSheet("color: rgb(63,72,204);background-color: rgb(242,242,242);")
-        editBox.setMaximumWidth(240)
-        editBox.setAlignment(Qt.AlignRight)
-        editBox.setReadOnly(True)
+        self.editBox = QLineEdit()
+        self.editBox.setFont(QFont("Arial",32))
+        self.editBox.setStyleSheet("color: rgb(63,72,204);background-color: rgb(242,242,242);")
+        self.editBox.setMaximumWidth(240)
+        self.editBox.setAlignment(Qt.AlignRight)
+        self.editBox.setReadOnly(True)
         
         progressBar = QProgressBar();
         progressBar.setOrientation(Qt.Vertical)
@@ -134,12 +134,17 @@ class QMeter(QWidget):
         vbox=QVBoxLayout()
         vbox.addWidget(label, alignment=Qt.AlignCenter)
         vbox.addLayout(hbox)
-        vbox.addWidget(editBox, alignment=Qt.AlignCenter)
+        vbox.addWidget(self.editBox, alignment=Qt.AlignCenter)
         self.setLayout(vbox)
         
     def setValue(self, value):
         self.__value = value
+        self.editBox.setText(format_float(value))
         
-        
+def format_float(value):
+    """Modified form of the 'g' format specifier."""
+    string = "{:g}".format(value).replace("e+", "e")
+    string = re.sub("e(-?)0*(\d+)", r"e\1\2", string)
+    return string        
         
         

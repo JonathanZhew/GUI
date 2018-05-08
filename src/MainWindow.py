@@ -15,30 +15,34 @@ from statusBar import myStatusBar
 from pageControlPanel import ControlPanel
 from CDatabase import RtReadDataBase, CommandDataBase
 from HmiProtocol import HmiProtocol
+from cfgDialog import ConfigureData
+import struct
 
 class App(QMainWindow):
  
     def __init__(self):
         super().__init__()
         self.title = 'EE_GUI V2.00 PyQt5 zhenfeng.zhao@asml.com'
+        self.initDat()
         self.initUI()
         
         self.SendQueue=[]
-
- 
-    def initUI(self):
-        self.setWindowTitle(self.title)
+        
+    def initDat(self):
         #initial backstage
         maker = HmiProtocol()
         self.comm = CMessenger(maker)
         self.comm.RegisterReciveHandle(self.handleReceive)
         self.comm.open()
-             
+                     
         self.RtReadList = RtReadDataBase('RtRead.csv')      
         self.CmdList = CommandDataBase('CmdList.csv')    
-                
-        #initial the front desk GUI
-    
+         
+        self.cfgData = ConfigureData(self.comm, self.CmdList)      
+ 
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        
         #CentralWidget layout
         self.tabs = QTabWidget()
         self.ControlPanel = ControlPanel(self.comm, self.RtReadList)
@@ -61,32 +65,27 @@ class App(QMainWindow):
         self.comm.repeatRequest(self.cmdRtRead)
         
         #test
-        self.comm.testCallbcak()
-        self.fleshDbValue(3131, 1)
+        #self.comm.testCallbcak()
+        #self.fleshDbValue(3131, 1)
         
                 
     def handleReceive(self, frame): 
-        head_section = frame[:32]
-        value_section = frame[32: ]
-        
-        info = self.comm.parseAck(head_section)
-
-        if(info.cmd == self.cmdRtRead):
-            self.fleshRtData(value_section)
+        if(frame.cmd == self.cmdRtRead):
+            self.fleshRtData(frame.data)
         else:
-            self.fleshDbValue(info.cmd, value_section)
+            self.fleshDbValue(frame.cmd, frame.data)
 
-    def fleshDbValue(self, cmdID, value_section): 
+    def fleshDbValue(self, cmdID, data): 
         row = self.CmdList.getRowbyCmd(cmdID)
-        #type = row['type']
-        #row['value'] = self.FrameMaker.unpack(type, value_section)
+        type = row['type']
+        row['value'] = self.comm.maker.unpack(type, data)
         #value =self.CmdList.getItems('Vtip target', 'value')
         #print(value)
      
-    def fleshRtData(self, value_section): 
-        pass  
-
-         
+    def fleshRtData(self, data): 
+        head = struct.unpack('dddddd', data)    
+        for i, meter in enumerate(self.ControlPanel.meters.values()):
+            meter.setValue(head[i])
  
 if __name__ == '__main__':
     app = QApplication(sys.argv)

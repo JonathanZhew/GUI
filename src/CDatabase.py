@@ -6,7 +6,7 @@ Created on Apr 30, 2018
 import csv
 from PyQt5.Qt import QPoint
 
-class CDataBase():
+class CDataBase(dict):
     def __init__(self, csvfile):
         self.db = {}
         with open(csvfile, 'r') as f:
