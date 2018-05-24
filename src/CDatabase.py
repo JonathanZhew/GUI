@@ -29,6 +29,9 @@ class CDataBase(dict):
     def keys(self):
         return self.db.keys()
     
+    def values(self):
+        return self.db.values()
+    
 class RtReadDataBase(CDataBase):
     def __init__(self, csvfile):
         super(RtReadDataBase, self).__init__(csvfile)
@@ -53,8 +56,13 @@ class CommandDataBase(CDataBase):
             cmdWrite = int(self.db[name]['read'])
             self.db[name]['set'] = cmdRead
             self.db[name]['read'] = cmdWrite
+            self.db[name]['step'] = float(self.db[name]['step'])
             self.db[name]['value'] = None
-            
+            try:
+                self.db[name]['conversion'] = float(self.db[name]['conversion'])
+            except:
+                self.db[name]['conversion'] = 1.0
+                
             strRange = self.db[name]['range'] 
             if('~' in strRange):
                 args = strRange.split('~')

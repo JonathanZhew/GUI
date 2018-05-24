@@ -9,26 +9,38 @@ from PyQt5.QtWidgets import QMessageBox
 from HmiProtocol import HmiProtocol
 from usb_can_drv import Usb2CanDev
 from pcie_drv import PcieDriver
+from PyQt5.QtCore import QThread, pyqtSignal
 
-class CMessenger(HmiProtocol):
+class CMessenger(QThread):    
+    sig1 = pyqtSignal(bytes, int, int)    
     def __init__(self, FrameMaker = None):   
+        #QThread.__init__(self)
         super(CMessenger, self).__init__()    
         self.SendQ=[]
         self.RecvQ=[] 
+        self.recvbuf = b'' 
         self.maker = FrameMaker
         self.__name = ''
         self.__isopen = False
         self.__dev = None
+
         self.__devUsb = Usb2CanDev()
+
+        """
         try:
             self.__devPCIe = PcieDriver(1600)
         except:
             print("Initial PcieDriver error:", sys.exc_info()[0])
- 
+         """
         self.repeatFrame = None
-        self.timer=QtCore.QTimer()
-        self.timer.timeout.connect(self.__MessageHub)        
-        self.timerCount = 0
+         
+        self.timerCount = 0          
+        
+        self.start()  
+        self.sig1.connect(self.RecvProcess)
+        #self.timer=QtCore.QTimer()
+        #self.timer.timeout.connect(self.__MessageHub)        
+ 
         
     def open(self, name = 'USB-CAN'):
         self.__name = name
@@ -46,14 +58,11 @@ class CMessenger(HmiProtocol):
             self.__dev = self.__devUsb
             self.__isopen = self.__dev.open()
             print('open', self.__name, self.__isopen)
-        
-        if self.__isopen:    
-            self.timer.start(10)
             
         return self.__isopen
     
     def close(self):
-        self.timer.stop()
+        #self.timer.stop()
         self.__dev.close()
         self.__isopen = False  
         print('Comm close!')
@@ -73,49 +82,62 @@ class CMessenger(HmiProtocol):
     def is_open(self):
         return self.__isopen
     
-    def setValue(self, cmd, value, vtype='d'):
-        frame = self.maker.setValue(self, cmd, value, vtype)
+    def setValue(self, cmd, value, vtype='d', conversion = 1):
+        if not self.__isopen:
+            print('err401 port is not open setValue()')
+            return
+        value = value/conversion
+        frame = self.maker.DemandFrame(cmd, value, vtype)
         self.SendQ.append(frame)
     
     def requestValue(self, cmd):
-        frame = self.maker.requestValue(cmd)
+        frame = self.maker.RequestFrame(cmd)
         self.SendQ.append(frame)
     
     def repeatRequest(self, cmd, time = 100):
-        self.repeatFrame = self.maker.requestValue(cmd)  
+        self.repeatFrame = self.maker.RequestFrame(cmd)  
+     
+    def run(self):  
+        while(1):
+            QThread.msleep(20)
+            if self.__isopen:
+                self.__MessageHub()
         
-    def __MessageHub(self):
+    def __MessageHub(self):      
         #read comm
-        self.RecvProcess()
+        self.popRecv()
         
         self.timerCount = self.timerCount+1        
         if self.timerCount >= 10:
             self.timerCount = 0
             if(self.repeatFrame!= None):
                 self.__write(self.repeatFrame)
-        elif len(self.SendQ):
+        elif len(self.SendQ) and self.timerCount%3==0:
             frame = self.SendQ.pop(0)
-            self.__write(frame)
+            try:   
+                self.__write(frame)
+            except:
+                print("err comm.__write", sys.exc_info())
     
     def RegisterReciveHandle(self, func):  
         self.rcvhandle =  func  
         
-    def RecvProcess(self):               
-        buff = self.__read()
-        if len(buff) < 32:
-            return
-        try:    
-            frame = self.maker.parseAck(buff)      
-            self.rcvhandle(frame) 
+    def popRecv(self):               
+        buffer = self.__read()
+        len1 = len(buffer)
+        if(len1>0):
+            self.sig1.emit(buffer, len1, 0)
             
-        except:
-            print("RecvProcess error:", sys.exc_info())
-            
-    def testCallbcak(self):
-        Frame = self.maker.requestValue(3103)  
-        try:          
-            self.rcvhandle(Frame) 
-        except:
-            print("testCallbcak error:", sys.exc_info())
+    def RecvProcess(self, buffer, len1, ret):               
+        frames = self.maker.parseAck(buffer) 
+        for frame in frames: 
+            if(frame.err!=0):
+                print("Ack err:", frame.err, frame.cmd, frame.sequence)
+                continue
+            try: 
+                self.rcvhandle(frame)             
+            except:
+                print("RecvProcess.rcvhandle error", sys.exc_info())
+        
 
     

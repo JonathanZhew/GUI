@@ -4,10 +4,8 @@ Created on Apr 23, 2018
 @author: zhenfengzhao
 '''
 import sys
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QTabWidget, QVBoxLayout,QLineEdit
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot
+
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QTabWidget
 from menu import myMenu
 from toolBar import myToolBar
 from Communication import CMessenger
@@ -15,11 +13,10 @@ from statusBar import myStatusBar
 from pageControlPanel import ControlPanel
 from CDatabase import RtReadDataBase, CommandDataBase
 from HmiProtocol import HmiProtocol
-from cfgDialog import ConfigureData
+from DlgConfigure import ConfigureData
 import struct
 
-class App(QMainWindow):
- 
+class App(QMainWindow): 
     def __init__(self):
         super().__init__()
         self.title = 'EE_GUI V2.00 PyQt5 zhenfeng.zhao@asml.com'
@@ -45,7 +42,7 @@ class App(QMainWindow):
         
         #CentralWidget layout
         self.tabs = QTabWidget()
-        self.ControlPanel = ControlPanel(self.comm, self.RtReadList)
+        self.ControlPanel = ControlPanel(self.comm, self.RtReadList, self.CmdList)
         self.tab2 = QWidget()
         self.tabs.addTab(self.ControlPanel, "    Panel    ")
         self.tabs.addTab(self.tab2, "    Chart    ")
@@ -77,15 +74,17 @@ class App(QMainWindow):
 
     def fleshDbValue(self, cmdID, data): 
         row = self.CmdList.getRowbyCmd(cmdID)
-        type = row['type']
-        row['value'] = self.comm.maker.unpack(type, data)
-        #value =self.CmdList.getItems('Vtip target', 'value')
-        #print(value)
+        if(cmdID == row['read']):
+            typ = row['type']
+            row['value'] = self.comm.maker.unpack(typ, data, row['conversion'])
+            #value =self.CmdList.getItems('Vtip target', 'value')
+            print('read', cmdID, row['value'])
      
     def fleshRtData(self, data): 
-        head = struct.unpack('dddddd', data)    
-        for i, meter in enumerate(self.ControlPanel.meters.values()):
-            meter.setValue(head[i])
+        values = struct.unpack('dddddd', data)  
+        values = [abs(number) for number in values]
+        #print(values)
+        self.ControlPanel.setAllValue(values)  
  
 if __name__ == '__main__':
     app = QApplication(sys.argv)

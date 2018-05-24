@@ -4,11 +4,12 @@ Created on Apr 23, 2018
 @author: zhenfengzhao
 '''
 
-from PyQt5.QtWidgets import QAction, QToolBar, QComboBox, QPushButton
+from PyQt5.QtWidgets import QAction, QToolBar, QComboBox, QPushButton,\
+    QMessageBox
 from PyQt5 import QtGui
 from PyQt5.QtGui import QIcon, QPixmap
 from Communication import CMessenger
-from cfgDialog import DlgConfigure
+from DlgConfigure import ConfigureData, DlgConfigure
 #from ledwidget import LedWidget
 
 class myToolBar(QToolBar):
@@ -70,12 +71,16 @@ class myToolBar(QToolBar):
         self.refresLinkStatus()   
    
     def chickbtnCfg(self):
-        dlg = DlgConfigure(self.mainWin.cfgData.cfgList)
-        dlg.exec_()     
-         
+        dlg = DlgConfigure(self.mainWin.cfgData)
+        dlg.exec_()  
+        self.mainWin.ControlPanel.setLabelInfo(self.mainWin.cfgData.GunNo, self.mainWin.cfgData.TableNo) 
+          
     def chickbtnManual(self):
         flg = self.btnManual.isChecked()
-        self.mainWin.tab1.ManualModeEnable(flg)
+        cmd = self.mainWin.CmdList.getItems('Manual', 'set')
+        val = 1 if flg else 0
+        self.__comm.setValue(cmd, val, vtype='e')
+        self.mainWin.ControlPanel.ManualModeEnable(flg)
             
         
     

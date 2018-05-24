@@ -47,7 +47,7 @@ class CScale(QWidget):
         qp.setFont(font)
         
         size = self.size()
-        width = size.width()
+        #width = size.width()
         height = size.height()
                 
         qp.setPen(QColor(255, 255, 255))
@@ -102,7 +102,6 @@ class QMeter(QWidget):
         self.__Obj = RtRead
         self.__name = RtRead['name']
         self.__uint = RtRead['uint']
-        self.__value = 0
         self.__initalLayout()            
         
     def __initalLayout(self):        
@@ -118,16 +117,15 @@ class QMeter(QWidget):
         self.editBox.setAlignment(Qt.AlignRight)
         self.editBox.setReadOnly(True)
         
-        progressBar = QProgressBar();
-        progressBar.setOrientation(Qt.Vertical)
-        progressBar.setMinimumSize(50,360)
-        progressBar.setValue(self.__value)
-        progressBar.setAlignment(Qt.AlignHCenter)
+        self.progressBar = QProgressBar();
+        self.progressBar.setOrientation(Qt.Vertical)
+        self.progressBar.setMinimumSize(50,360)
+        self.progressBar.setAlignment(Qt.AlignHCenter)
         #ProgressBar.setTextVisible(True)        
         scale = CScale(self.__Obj)
         hbox=QHBoxLayout()
         hbox.addStretch(1)
-        hbox.addWidget(progressBar)
+        hbox.addWidget(self.progressBar)
         hbox.addWidget(scale)   
         hbox.addStretch(1)
         
@@ -137,9 +135,10 @@ class QMeter(QWidget):
         vbox.addWidget(self.editBox, alignment=Qt.AlignCenter)
         self.setLayout(vbox)
         
-    def setValue(self, value):
-        self.__value = value
-        self.editBox.setText(format_float(value))
+    def setValue(self, text, percent):
+        self.editBox.setText(text)
+        self.progressBar.setValue(percent) 
+
         
 def format_float(value):
     """Modified form of the 'g' format specifier."""
