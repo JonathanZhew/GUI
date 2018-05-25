@@ -4,13 +4,14 @@ Created on Apr 25, 2018
 @author: zhenfengzhao
 '''
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QGroupBox, QLabel, QDoubleSpinBox,\
-    QPushButton
+    QPushButton, QProgressBar
 from QMeter import QMeter
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 from ledwidget import LedWidget
 from functools import partial
 from PyQt5.Qt import QIcon
+from _tracemalloc import start
 
 def num_after_point(x):
         s = str(x)
@@ -32,7 +33,36 @@ class ControlPanel(QWidget):
         Layout.addWidget(g2) 
         #vbox.addStretch(1)
         self.setLayout(Layout)
-
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.timeout)
+        self.timer.start(500)      
+        self.percentage = 0
+        self.isRuningTask = True
+    
+    def timeout(self):
+        cmd = self.cmdList.getItems('Emission','read')
+        self.__comm.requestValue(cmd)
+        val = self.cmdList.getItems('Emission','value')
+        try:
+            str1 = self.cmdList.getItems('Emission','range')
+            args = str1.split(';')
+            text = args[val]
+        except:
+            text = str(val)
+                
+        if val==1:
+            self.percentage = 100
+        elif val == 0:
+            self.percentage = 0
+        else:
+            if self.isRuningTask == True:
+                self.percentage = (self.percentage+20)%100
+            else:
+                self.percentage = 50
+                                
+        self.AutoStatue.setFormat(text)        
+        self.AutoStatue.setValue(self.percentage)
+            
     def meterGroupBox(self, RtReads, CmdList):       
         gridBox = QGridLayout()
         self.meters = {}
@@ -98,10 +128,11 @@ class ControlPanel(QWidget):
 
     def OperaterGroupBox(self):   
         stylesheet = """
-            QPushButton { qproperty-iconSize: 48px 48px; 
-                          min-height: 48px;
-                          font-size: 12pt;
-                        }
+            QPushButton { 
+                qproperty-iconSize: 48px 48px; 
+                min-height: 48px;
+                font-size: 12pt;
+            }
             """                    
         self.btnAutoHVon = QPushButton('On')
         self.btnAutoHVoff = QPushButton('Off')    
@@ -130,8 +161,14 @@ class ControlPanel(QWidget):
         label.setStyleSheet("color: rgb(15,34,139);")
         
         self.led = LedWidget()
-        self.led.setDiameter(30)
+        self.led.setDiameter(38)
         self.led.setMinimumSize(50,50)
+        self.AutoStatue = QProgressBar()
+        self.AutoStatue.setMinimumSize(128,38)
+        self.AutoStatue.setTextVisible(True)
+        self.AutoStatue.setFormat("idel...")
+        self.AutoStatue.setAlignment(Qt.AlignCenter);
+        self.AutoStatue.setValue(50)
         
         self.labelInfo = QLabel('Gun No:ABC123\nTable:BEANCH008')
         self.labelInfo.setFont(QFont("Calibri",18))
@@ -145,8 +182,8 @@ class ControlPanel(QWidget):
         box.addWidget(self.btnTaskPause)
         box.addWidget(self.btnTaskPlay)
         box.addWidget(self.btnTaskStop)
-        
-        box.addWidget(self.led)  
+        box.addWidget(self.led)          
+        box.addWidget(self.AutoStatue)  
         box.addStretch(1)  
         box.addWidget(self.labelInfo)      
          
@@ -169,22 +206,34 @@ class ControlPanel(QWidget):
     def clickedHvOn(self):
         cmd = self.cmdList.getItems('Emission','set')
         self.__comm.setValue(cmd, 1, 'e')
+        self.btnTaskPause.setEnabled(True)
+        self.btnTaskPlay.setEnabled(True)
+        self.isRuningTask = True
     
     def clickedHvOff(self):
         cmd = self.cmdList.getItems('Emission','set')
         self.__comm.setValue(cmd, 0, 'e')
+        self.btnTaskPause.setEnabled(True)
+        self.btnTaskPlay.setEnabled(True)
+        self.isRuningTask = True
      
     def clickedTaskPlay(self):
         cmd = self.cmdList.getItems('Task','set')
-        self.__comm.setValue(cmd, 3, 'e')           
+        self.__comm.setValue(cmd, 3, 'e')   
+        self.isRuningTask = True
      
     def clickedTaskStop(self):
         cmd = self.cmdList.getItems('Task','set')
         self.__comm.setValue(cmd, 1, 'e')  
+        self.isRuningTask = False
+        self.btnTaskPause.setEnabled(False)
+        self.btnTaskPlay.setEnabled(False)
         
     def clickedTaskPause(self):
         cmd = self.cmdList.getItems('Task','set')
-        self.__comm.setValue(cmd, 2, 'e')     
+        self.__comm.setValue(cmd, 2, 'e')
+        self.isRuningTask = False  
+
         
         
         

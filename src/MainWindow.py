@@ -78,7 +78,7 @@ class App(QMainWindow):
             typ = row['type']
             row['value'] = self.comm.maker.unpack(typ, data, row['conversion'])
             #value =self.CmdList.getItems('Vtip target', 'value')
-            print('read', cmdID, row['value'])
+            print('read', cmdID, 'value', row['value'])
      
     def fleshRtData(self, data): 
         values = struct.unpack('dddddd', data)  

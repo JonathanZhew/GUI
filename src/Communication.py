@@ -84,7 +84,7 @@ class CMessenger(QThread):
     
     def setValue(self, cmd, value, vtype='d', conversion = 1):
         if not self.__isopen:
-            print('err401 port is not open setValue()')
+            print('err401 port is not open setValue()', cmd, value)
             return
         value = value/conversion
         frame = self.maker.DemandFrame(cmd, value, vtype)

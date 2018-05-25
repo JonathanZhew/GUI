@@ -9,10 +9,10 @@ IP1 threshold,Torr,Trip,3150,3151,F1,d,1,,1e-11~1e-5
 FC1,A,Trip,3110,3111,1,d,0.002,,0~3.0
 BV1,V,Trip,3118,3119,-1,d,15,,0~1000
 Vtip,V,Trip,3106,3107,-1,d,50,,0~15000
-IP1-Normal,Pa,Parameter,3146,3147,F1,d,1,,1e-11~1e-5
-IP1-Alert,Pa,Parameter,3148,3149,F1,d,1,,1e-11~1e-5
-Emission,,Operater,3100,3101,1,e,1,,0:Off;1:On
+IP1-Normal,Pa,Operater,3146,3147,F1,d,1,,1e-11~1e-5
+IP1-Alert,Pa,Operater,3148,3149,F1,d,1,,1e-11~1e-5
+Emission,,Operater,3100,3101,1,e,1,,0:Off;1:On;2:start hv on…;3:start hv off…;4:set FC1 to 2A;5:set FC1 to target; 6:set BV1;7:set Vtip;8:off FC1 to 2A;9:off FC1;10:off  Vtip;11:off BV1;12:idel ?
 Task,,Operater,3122,3123,1,e,1,,1:cancel;2:pause;3:continue
 Protect,,Operater,3144,3145,1,e,1,,0:disable;1:enable
-RtRead,,Operater,3143,3143,1,a,1,,
+RtRead,,RealTime,3143,3143,1,a,1,,
 Manual,,Operater,3134,3135,1,e,1,,0:Off;1:On
