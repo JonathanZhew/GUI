@@ -3,11 +3,9 @@ Created on Apr 26, 2018
 
 @author: zhenfengzhao
 '''
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QProgressBar, QLineEdit, QLabel
-from PyQt5.QtGui import QPainter, QFont, QColor, QPen, QIntValidator
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.Qt import QPoint
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QProgressBar, QLineEdit, QLabel
+from PyQt5.QtGui import QPainter, QFont, QColor, QPen
+from PyQt5.QtCore import Qt
 import re
 
 class CAxis():
@@ -17,20 +15,33 @@ class CAxis():
         self.color = color
 
 class CScale(QWidget):
-    def __init__(self, RtRead):
+    def __init__(self, RtRead, parent=None):
         super().__init__()
+        self.parent = parent
         self.__maxvalue = RtRead['max']
         self.__minvalue = RtRead['min']
+        self.__step = RtRead['step']
         self.__value = 0
-        self.__axis = {}
-        
+        self.CustomerTicks = {}
+
         self.ValidRange = RtRead['valid']
-        self.setAxis('min', self.ValidRange.x(), str(self.ValidRange.x()), QColor(255, 255, 255))
-        self.setAxis('max', self.ValidRange.y(), str(self.ValidRange.y()), QColor(255, 255, 255))
-        self.initUI()  
-        
-    def initUI(self):
+        #self.setCustomerTicks('Hmin', self.ValidRange.x(), str(self.ValidRange.x()), QColor(0, 0, 255))
+        #self.setCustomerTicks('HHHmax', self.ValidRange.y(), str(self.ValidRange.y()), QColor(255, 0, 0))
         self.setMinimumSize(10, 30)
+        self.initAxisText()
+
+    def initAxisText(self):
+        self.axisText = [] 
+        self.axisText.append(str(self.__minvalue))
+        cnt = int((self.__maxvalue-self.__minvalue)/self.__step)
+        for num in range(1, cnt):
+            self.axisText.append(str(self.__step*num+self.__minvalue))
+        self.axisText.append(str(self.__maxvalue))
+        #print(self.axisText)
+        
+    def SetAxisText(self, ticks):           
+        for i, tick in enumerate(ticks):
+            self.axisText[i] = tick
 
     def setValue(self, value):
         self.value = value
@@ -42,6 +53,9 @@ class CScale(QWidget):
         qp.end()
 
     def drawWidget(self, qp):
+        #print(self.parent.size())
+        self.setMinimumWidth(self.parent.size().width()/2)
+        
         cw= 15 #width of scale
         font = QFont("Serif", 8, QFont.Light)
         qp.setFont(font)
@@ -62,38 +76,39 @@ class CScale(QWidget):
         
         qp.setPen(QColor(100,100,100))
         
-        metrics = qp.fontMetrics()
-            
-        qp.drawLine(0, 0, 0, height)        
-        qp.drawText(cw, 0, str(self.__maxvalue))
+        metrics = qp.fontMetrics()            
+       
+        qp.drawLine(0, 0, 0, height)  
+        qp.drawLine(0, 0, cw, 0) 
+        qp.drawLine(0, height-1, cw, height-1)       
         
-        qp.drawLine(0, height-1, cw, height-1)
-        qp.drawText(cw, height, str(self.__minvalue))
-        
-        qp.drawLine(0, 0, cw, 0)
-        ma= metrics.ascent()
-        qp.drawText(cw, ma-3, str(self.__maxvalue))
-        
-        mw= metrics.width(str(self.__maxvalue))
-        self.setMinimumWidth(mw+cw)
-        
-        for i in range(0, 10):
-            y = height*i/10
-            #print(y)
-            qp.drawLine(0, y, cw*2/3, y)
-            #metrics = qp.fontMetrics()
-            #fw = metrics.width(str(self.num[j]))
-            #qp.drawText(i-fw/2, h/2, str(self.num[j]))
-            
-        for key in self.__axis:
-            axis = self.__axis[key]
+        ma= metrics.ascent()       
+        cnt = len(self.axisText) - 1
+        for i, text in enumerate(self.axisText):
+            if i == 0:
+                qp.drawText(cw, height, text)
+            elif i == cnt:
+                qp.drawText(cw, ma-3, text)
+            else:
+                y = height*(cnt-i)/cnt
+                qp.drawLine(0, y, cw*2/3, y)
+                qp.drawText(cw, y+ma/2 , text)
+
+        font = QFont("Serif", 12, QFont.Light)
+        qp.setFont(font)
+        metrics = qp.fontMetrics()   
+        ma= metrics.ascent()  
+        for name, axis in self.CustomerTicks.items():
+            qp.setPen(axis.color)
             y = (height - (height*(axis.value - self.__minvalue)/(self.__maxvalue - self.__minvalue)))
             #print(axis.value)
-            qp.drawText(cw, y+ma/2, str(axis.text))
-    
-    def setAxis(self, key, value, text, color):        
-        self.__axis[key] = CAxis(value, text, color)
-                
+            #str1 = "{0:s} {1:s}".format(name, axis.text)
+            qp.drawText(2*cw+5, y-ma, name)
+            qp.drawText(2*cw+5, y, axis.text)
+            pen = QPen(QColor(100,100,100), 2, Qt.SolidLine)
+            qp.setPen(pen)
+            qp.drawLine(0, y, 2*cw, y-ma)
+            qp.drawLine(2*cw, y, 2*cw, y-2*ma)       
         
 
 class QMeter(QWidget):
@@ -101,10 +116,11 @@ class QMeter(QWidget):
         super(QMeter, self).__init__()
         self.__Obj = RtRead
         self.__name = RtRead['name']
-        self.__uint = RtRead['uint']
-        self.__initalLayout()            
+        self.__uint = RtRead['uint']        
+        self.initLayout()  
+   
         
-    def __initalLayout(self):        
+    def initLayout(self):        
         label = QLabel(self.__name+' ('+self.__uint+')')
         label.setFont(QFont("Calibri",24, QFont.Bold))
         label.setStyleSheet("color: rgb(15,34,139);")
@@ -122,12 +138,12 @@ class QMeter(QWidget):
         self.progressBar.setMinimumSize(50,360)
         self.progressBar.setAlignment(Qt.AlignHCenter)
         #ProgressBar.setTextVisible(True)        
-        scale = CScale(self.__Obj)
+        self.scale = CScale(self.__Obj, self)
         hbox=QHBoxLayout()
         hbox.addStretch(1)
         hbox.addWidget(self.progressBar)
-        hbox.addWidget(scale)   
-        hbox.addStretch(1)
+        hbox.addWidget(self.scale)   
+        #hbox.addStretch(1)
         
         vbox=QVBoxLayout()
         vbox.addWidget(label, alignment=Qt.AlignCenter)
@@ -139,6 +155,11 @@ class QMeter(QWidget):
         self.editBox.setText(text)
         self.progressBar.setValue(percent) 
 
+    def setTicks(self, ticks):        
+        self.scale.SetAxisText(ticks)
+     
+    def setSpecialTick(self, name, value, text, color):        
+        self.scale.CustomerTicks[name] = CAxis(value, text, color)   
         
 def format_float(value):
     """Modified form of the 'g' format specifier."""

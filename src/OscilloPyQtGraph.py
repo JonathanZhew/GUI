@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 
 WAVE_DATA_DEEP = 600
@@ -19,9 +17,8 @@ class CWave:
         
 class Oscillograph(pg.PlotWidget):
     def __init__(self, parent=None):
-        super(Oscillograph, self).__init__(parent)
-        self.show()
-
+        super(Oscillograph, self).__init__()
+        #self.show()
         self.views = []
         self.plots = []
         self.waves=[]
@@ -70,19 +67,22 @@ class Oscillograph(pg.PlotWidget):
         self.plots.append(plot)
         
         self.count= self.count+1       
-        
-                
+     
+    def reset(self):
+        self.index = 0
+        for wave in self.waves:
+            wave.data =  np.zeros(WAVE_DATA_DEEP)
+            
     def renew(self, datas):
         self.autoSetXAxis(self.index)
         emptyIndex = (self.index + 5)%WAVE_DATA_DEEP
         self.index = (self.index + 1)%WAVE_DATA_DEEP
-        print(emptyIndex, self.index)
+        #print(emptyIndex, self.index)
         for ch in range(0,len(datas)):
             self.waves[ch].data[self.index:emptyIndex]=[-1]*(emptyIndex-self.index)
             self.waves[ch].data[self.index] = datas[ch]
             self.waves[ch].currV = datas[ch]
-
-        self.plots[0].setData(self.waves[0].data)
+        #self.plots[0].setData(self.waves[0].data)
 
     def renew_ch(self, ch, data):
         self.autoSetXAxis(self.index)

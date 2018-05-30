@@ -10,7 +10,7 @@ from HmiProtocol import HmiProtocol
 from usb_can_drv import Usb2CanDev
 from pcie_drv import PcieDriver
 from PyQt5.QtCore import QThread, pyqtSignal
-
+import logging
 class CMessenger(QThread):    
     sig1 = pyqtSignal(bytes, int, int)    
     def __init__(self, FrameMaker = None):   
@@ -51,6 +51,8 @@ class CMessenger(QThread):
                 self.__dev.open()
             except:
                 QMessageBox.question(self, 'error', "Fail to open PCIe", QMessageBox.Ok, QMessageBox.Ok)
+                log = 'open PCIe {0}'.format(sys.exc_info())
+                logging.error(log)
             if(self.__dev.is_open()):
                 self.__isopen = True                    
         #usb-can        
@@ -117,7 +119,9 @@ class CMessenger(QThread):
             try:   
                 self.__write(frame)
             except:
-                print("err comm.__write", sys.exc_info())
+                log = '__MessageHub err {0}'.format(sys.exc_info())
+                print(log)
+                logging.error(log)
     
     def RegisterReciveHandle(self, func):  
         self.rcvhandle =  func  
@@ -132,12 +136,16 @@ class CMessenger(QThread):
         frames = self.maker.parseAck(buffer) 
         for frame in frames: 
             if(frame.err!=0):
-                print("Ack err:", frame.err, frame.cmd, frame.sequence)
+                log = 'RecvProcess ACK err:{0:d} cmd:{1:d}, seq:{2:d}'.format(frame.err, frame.cmd, frame.sequence)
+                print(log)
+                logging.error(log)
                 continue
             try: 
                 self.rcvhandle(frame)             
             except:
-                print("RecvProcess.rcvhandle error", sys.exc_info())
+                log = 'RecvProcess.rcvhandle err {0}'.format(sys.exc_info())
+                print(log)
+                logging.error(log)
         
 
     

@@ -74,6 +74,7 @@ class myToolBar(QToolBar):
         dlg = DlgConfigure(self.mainWin.cfgData)
         dlg.exec_()  
         self.mainWin.ControlPanel.setLabelInfo(self.mainWin.cfgData.GunNo, self.mainWin.cfgData.TableNo) 
+        self.mainWin.ControlPanel.setMyTicks()
           
     def chickbtnManual(self):
         flg = self.btnManual.isChecked()

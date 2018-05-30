@@ -4,14 +4,17 @@ Created on Apr 25, 2018
 @author: zhenfengzhao
 '''
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QGroupBox, QLabel, QDoubleSpinBox,\
-    QPushButton, QProgressBar
+    QPushButton, QProgressBar, QMessageBox
 from QMeter import QMeter
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QColor
 from ledwidget import LedWidget
 from functools import partial
 from PyQt5.Qt import QIcon
-from _tracemalloc import start
+from math import log
+
+STA_EMISS_ON = 1
+STA_EMISS_OFF = 0
 
 def num_after_point(x):
         s = str(x)
@@ -38,30 +41,7 @@ class ControlPanel(QWidget):
         self.timer.start(500)      
         self.percentage = 0
         self.isRuningTask = True
-    
-    def timeout(self):
-        cmd = self.cmdList.getItems('Emission','read')
-        self.__comm.requestValue(cmd)
-        val = self.cmdList.getItems('Emission','value')
-        try:
-            str1 = self.cmdList.getItems('Emission','range')
-            args = str1.split(';')
-            text = args[val]
-        except:
-            text = str(val)
-                
-        if val==1:
-            self.percentage = 100
-        elif val == 0:
-            self.percentage = 0
-        else:
-            if self.isRuningTask == True:
-                self.percentage = (self.percentage+20)%100
-            else:
-                self.percentage = 50
-                                
-        self.AutoStatue.setFormat(text)        
-        self.AutoStatue.setValue(self.percentage)
+        self.HvStatus = 0
             
     def meterGroupBox(self, RtReads, CmdList):       
         gridBox = QGridLayout()
@@ -91,11 +71,53 @@ class ControlPanel(QWidget):
                 SetBox.valueChanged.connect(partial(self.setDemand, SetBox, row))
                 self.manual[name] = SetBox
                 gridBox.addWidget(SetBox, 1, i,  alignment=Qt.AlignCenter) 
-
+        
+        self.meters['IP1'].setTicks(['1e-11','1e-10','1e-9','1e-8','1e-7'])
         GroupBox = QGroupBox("Monitor")
         GroupBox.setLayout(gridBox)
         return GroupBox  
     
+    def IPConvAdc2Torr(self, val):
+        return 0.1**(11-(val/1024)*3.9)
+    
+    def IPConvTorr2Adc(self, val):
+        tmp = log(val, 10)
+        return int((11+tmp)*1024/3.9)
+    
+    def setMyTicks(self):
+        row = self.cmdList.getRowbyName('FC1 target')
+        value = row['value']
+        if( value!= None):
+            self.meters['FC1'].setSpecialTick('Target', value, '{0:.3f}'.format(value), QColor(0, 0, 255))
+        
+        row = self.cmdList.getRowbyName('BV1 target')
+        value = row['value']
+        if( value!= None):
+            self.meters['BV1'].setSpecialTick('Target', value, '{0:.1f}'.format(value), QColor(0, 0, 255))
+    
+        row = self.cmdList.getRowbyName('Vtip target')
+        value = row['value']
+        if( value!= None):
+            self.meters['Vtip'].setSpecialTick('Target', value, '{0:.1f}'.format(value), QColor(0, 0, 255))
+        '''    
+        row = self.cmdList.getRowbyName('IP1 Normal')
+        value = row['value']
+        if( value!= None):
+            ADC = self.IPConvTorr2Adc(value)
+            self.meters['IP1'].setSpecialTick('Normal', ADC, '{0:.2g}'.format(value), QColor(0, 0, 255))            
+            
+        row = self.cmdList.getRowbyName('IP1 Alert')
+        value = row['value']
+        if( value!= None):
+            ADC = self.IPConvTorr2Adc(value)
+            self.meters['IP1'].setSpecialTick('Alarm', ADC, '{0:.2g}'.format(value), QColor(0, 0, 255))
+        '''
+        row = self.cmdList.getRowbyName('IP1 threshold')
+        value = row['value']
+        if( value!= None):
+            ADC = self.IPConvTorr2Adc(value)
+            self.meters['IP1'].setSpecialTick('Trip', ADC, '{0:.2g}'.format(value), QColor(255, 0, 0))    
+            
     def setDemand(self, edit, row):
         type1 = row['type']
         conversion = row['conversion']
@@ -122,6 +144,8 @@ class ControlPanel(QWidget):
             maxV = self.Readers.getItems(name, 'max')
             percent = 100*value/maxV
             str1 = self.Readers.getItems(name, 'format')
+            if(name == 'IP1'):
+                value = self.IPConvAdc2Torr(value)
             text1 = str1.format(value)
             self.meters[name].setValue(text1, percent) 
             #print(name, value, percent)  
@@ -137,22 +161,16 @@ class ControlPanel(QWidget):
         self.btnAutoHVon = QPushButton('On')
         self.btnAutoHVoff = QPushButton('Off')    
         
-        self.btnTaskStop = QPushButton(QIcon('ico/stop.png'),'')
         self.btnTaskPause = QPushButton(QIcon('ico/pause.png'),'')
         self.btnTaskPlay = QPushButton(QIcon('ico/play.png'),'')
 
         self.btnAutoHVon.setStyleSheet(stylesheet)
         self.btnAutoHVoff.setStyleSheet(stylesheet)        
-        self.btnTaskStop.setStyleSheet(stylesheet)
         self.btnTaskPause.setStyleSheet(stylesheet)
         self.btnTaskPlay.setStyleSheet(stylesheet)
-        self.btnTaskStop.setVisible(False)
-        self.btnTaskPause.setVisible(False)
-        self.btnTaskPlay.setVisible(False)
         
         self.btnAutoHVon.clicked.connect(self.clickedHvOn)        
         self.btnAutoHVoff.clicked.connect(self.clickedHvOff)   
-        self.btnTaskStop.clicked.connect(self.clickedTaskStop) 
         self.btnTaskPause.clicked.connect(self.clickedTaskPause)
         self.btnTaskPlay.clicked.connect(self.clickedTaskPlay)
         
@@ -163,27 +181,27 @@ class ControlPanel(QWidget):
         self.led = LedWidget()
         self.led.setDiameter(38)
         self.led.setMinimumSize(50,50)
-        self.AutoStatue = QProgressBar()
-        self.AutoStatue.setMinimumSize(128,38)
-        self.AutoStatue.setTextVisible(True)
-        self.AutoStatue.setFormat("idel...")
-        self.AutoStatue.setAlignment(Qt.AlignCenter);
-        self.AutoStatue.setValue(50)
+        self.led.setColor(QColor('green'))
+        self.AutoStatuebar = QProgressBar()
+        self.AutoStatuebar.setMinimumSize(128,38)
+        self.AutoStatuebar.setTextVisible(True)
+        self.AutoStatuebar.setFormat("idel...")
+        self.AutoStatuebar.setAlignment(Qt.AlignCenter);
+        self.AutoStatuebar.setValue(50)
         
         self.labelInfo = QLabel('Gun No:ABC123\nTable:BEANCH008')
         self.labelInfo.setFont(QFont("Calibri",18))
         self.labelInfo.setStyleSheet("color: rgb(15,34,139);")
         
         box =  QHBoxLayout();
-        box.addWidget(label)  
-        
+        box.addWidget(self.led) 
+        box.addWidget(label) 
         box.addWidget(self.btnAutoHVon)
         box.addWidget(self.btnAutoHVoff)
         box.addWidget(self.btnTaskPause)
-        box.addWidget(self.btnTaskPlay)
-        box.addWidget(self.btnTaskStop)
-        box.addWidget(self.led)          
-        box.addWidget(self.AutoStatue)  
+        box.addWidget(self.btnTaskPlay)      
+        box.addWidget(self.AutoStatuebar) 
+        
         box.addStretch(1)  
         box.addWidget(self.labelInfo)      
          
@@ -194,47 +212,78 @@ class ControlPanel(QWidget):
     def ManualModeEnable(self, flg = True):
         for name in self.manual.keys():
             self.manual[name].setVisible(flg)
-                        
-        self.btnTaskStop.setVisible(flg)
-        self.btnTaskPause.setVisible(flg)
-        self.btnTaskPlay.setVisible(flg)
         
     def setLabelInfo(self, GunNo, TableNo):
         text = 'Gun No:{0}\nTable:{1}'.format(GunNo, TableNo)
         self.labelInfo.setText(text)
-        
-    def clickedHvOn(self):
+    
+    def popMessage(self):
+        if(self.HvStatus == STA_EMISS_OFF) or (self.HvStatus == STA_EMISS_ON):
+            ret = QMessageBox.Yes
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("Warning")
+            msg.setInformativeText('The current task is running!\nContinue?')
+            msg.setWindowTitle("MessageBox")
+            #msg.setDetailedText("The details are as follows:")
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            ret = msg.exec_()
+        return ret
+    
+    def setCmdHV(self, val):
+        cmd = self.cmdList.getItems('Task','set')
+        self.__comm.setValue(cmd, 1, 'e')     
         cmd = self.cmdList.getItems('Emission','set')
-        self.__comm.setValue(cmd, 1, 'e')
-        self.btnTaskPause.setEnabled(True)
-        self.btnTaskPlay.setEnabled(True)
+        self.__comm.setValue(cmd, val, 'e')
         self.isRuningTask = True
+        self.timer.start(500)   
+                
+    def clickedHvOn(self):       
+        if QMessageBox.Yes == self.popMessage(): 
+            self.setCmdHV(STA_EMISS_ON)
     
     def clickedHvOff(self):
-        cmd = self.cmdList.getItems('Emission','set')
-        self.__comm.setValue(cmd, 0, 'e')
-        self.btnTaskPause.setEnabled(True)
-        self.btnTaskPlay.setEnabled(True)
-        self.isRuningTask = True
+        if QMessageBox.Yes == self.popMessage():  
+            self.setCmdHV(STA_EMISS_OFF)
      
     def clickedTaskPlay(self):
         cmd = self.cmdList.getItems('Task','set')
         self.__comm.setValue(cmd, 3, 'e')   
         self.isRuningTask = True
-     
-    def clickedTaskStop(self):
-        cmd = self.cmdList.getItems('Task','set')
-        self.__comm.setValue(cmd, 1, 'e')  
-        self.isRuningTask = False
-        self.btnTaskPause.setEnabled(False)
-        self.btnTaskPlay.setEnabled(False)
         
     def clickedTaskPause(self):
         cmd = self.cmdList.getItems('Task','set')
         self.__comm.setValue(cmd, 2, 'e')
         self.isRuningTask = False  
 
+    def timeout(self):
+        val = self.cmdList.getItems('Emission','value')
+        self.HvStatus = val
+        cmd = self.cmdList.getItems('Emission','read')
+        self.__comm.requestValue(cmd)
         
+        try:
+            str1 = self.cmdList.getItems('Emission','range')
+            args = str1.split(';')
+            text = args[val]
+        except:
+            text = str(val)
+                
+        if val == STA_EMISS_ON:
+            self.percentage = 100
+            self.timer.stop()
+        elif val == STA_EMISS_OFF:
+            self.percentage = 0
+            self.timer.stop()
+        else:
+            if self.isRuningTask == True:
+                self.percentage = (self.percentage+20)%100
+            else:
+                self.percentage = 50
+                                
+        self.AutoStatuebar.setFormat(text)        
+        self.AutoStatuebar.setValue(self.percentage)    
         
         
         

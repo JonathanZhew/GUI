@@ -40,6 +40,7 @@ class RtReadDataBase(CDataBase):
             self.db[name]['min'] = float(self.db[name]['min'])
             self.db[name]['wr'] = True if (self.db[name]['wr'] == 'TRUE')  else False
             self.db[name]['value'] = None
+            self.db[name]['step'] = float(self.db[name]['step'])
             
             args = self.db[name]['valid'].split('~')
             x = float(args[0])

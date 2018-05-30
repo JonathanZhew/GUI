@@ -6,7 +6,6 @@ Created on May 2, 2018
 from PyQt5.QtWidgets import QLineEdit, QGroupBox, QVBoxLayout, QDialog,\
     QPushButton, QHBoxLayout, QGridLayout, QLabel, QDoubleSpinBox, QMessageBox
 from QScientificSpinBox import QScientificSpinBox
-from time import sleep
 from PyQt5.QtCore import pyqtSlot, QTimer
 
 class ConfigureData():
