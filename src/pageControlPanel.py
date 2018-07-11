@@ -68,7 +68,7 @@ class ControlPanel(QWidget):
                 SetBox.setDecimals(num)
                 SetBox.setRange(minV,maxV)
                 #(self, cmd, edit, type1, conversion):
-                SetBox.valueChanged.connect(partial(self.setDemand, SetBox, row))
+                SetBox.editingFinished.connect(partial(self.setDemand, SetBox, row))
                 self.manual[name] = SetBox
                 gridBox.addWidget(SetBox, 1, i,  alignment=Qt.AlignCenter) 
         
@@ -236,6 +236,8 @@ class ControlPanel(QWidget):
         self.__comm.setValue(cmd, 1, 'e')     
         cmd = self.cmdList.getItems('Emission','set')
         self.__comm.setValue(cmd, val, 'e')
+
+        self.cmdList.setItems('Emission','value', 'start')
         self.isRuningTask = True
         self.timer.start(500)   
                 

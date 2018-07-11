@@ -96,10 +96,15 @@ class Oscillograph(pg.PlotWidget):
             self.views[index].setGeometry(self.plotItem.vb.sceneBoundingRect())
             self.views[index].linkedViewChanged(self.plotItem.vb, self.views[index].XAxis)
 
+    def IPConvAdc2Torr(self, val):
+        return 0.1**(11-(val/1024)*3.9)
+
     def mydraw(self):
         for index in range(0, self.count):
             self.plots[index].setData(self.waves[index].data)
-        text = ['%s = %.6g' % (wase.name,wase.currV) for wase in self.waves]
+        text = ['%s = %.5g' % (wase.name,wase.currV) for wase in self.waves]
+        text2 = 'IP1 = %.3g'%self.IPConvAdc2Torr(self.waves[0].currV)
+        text.append(text2)
         self.plotItem.setTitle(text)
 
     def SetSample(self, microsecond):

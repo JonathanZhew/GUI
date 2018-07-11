@@ -58,6 +58,7 @@ class CommandDataBase(CDataBase):
             self.db[name]['set'] = cmdRead
             self.db[name]['read'] = cmdWrite
             self.db[name]['step'] = float(self.db[name]['step'])
+            self.db[name]['round'] = int(self.db[name]['round'])
             self.db[name]['value'] = None
             try:
                 self.db[name]['conversion'] = float(self.db[name]['conversion'])

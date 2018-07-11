@@ -43,8 +43,9 @@ class ConfigureData():
     def setValues(self, values):
         self.settings = values
         for i, row in enumerate(self.list.values()):
-            self.comm.setValue(row['set'], values[i], row['type'], row['conversion'])  
-            print('set', row['set'], values[i], row['type'])
+            val = values[i]/row['conversion']
+            self.comm.setValue(row['set'], val, row['type'])  
+            print('set', row['set'], val, row['type'])
                 
 class DlgConfigure(QDialog):
     def __init__(self, cfgData):
@@ -103,6 +104,8 @@ class DlgConfigure(QDialog):
                          
             if(row['group'] == 'Target'):            
                 edit = QDoubleSpinBox()
+                edit.setDecimals(row['round'])
+                edit.setSingleStep(row['step'])
                 #edit.setSpecialValueText('err')
                 edit.setRange(row['min'],row['max'] )
                 gird1.addWidget(lable, index1, 0) 
@@ -164,9 +167,9 @@ class DlgConfigure(QDialog):
     def checkResult(self):
         self.btnApply.setEnabled(True)
         if self.cfgDat.isAvailable():  
-            text = "Successfully set up configuration\n"   
+            text = "Successfully set up configuration\n"
         else:
-            text = "ERROR: Failed to set configuration\n"          
+            text = "ERROR: Failed to set configuration\n"
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText(text)

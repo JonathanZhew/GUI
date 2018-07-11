@@ -78,8 +78,8 @@ class QOscilPanel():
             self.btnSample.setText('stop')
             self.flgSample = True
             st = int(self.editSampleRate.text())
-            st = st if st > 50 else 50
-            self.TrigerSample = int(st/50)
+            st = st if st > 100 else 100
+            self.TrigerSample = int(st/100)
             self.Oscil.SetSample(st)
             #print(self.editSampleRate.text())            
         else:           
