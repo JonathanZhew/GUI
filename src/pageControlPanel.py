@@ -126,7 +126,7 @@ class ControlPanel(QWidget):
         if(type1 == 't'):
             value = edit.text()
         elif(type1 == 'd'):
-            value = edit.value()
+            value = edit.value()/conversion
         elif(type1 == 'e'):
             text = edit.currentText()
             args = text.split(':')
@@ -134,7 +134,7 @@ class ControlPanel(QWidget):
                 value = int(args[0])
             else:
                 value = edit.currentIndex()
-        self.__comm.setValue(cmd, value, type1, conversion)
+        self.__comm.setValue(cmd, value, type1)
         #(self, cmd, value, vtype='d', conversion = 1):
         
     def setAllValue(self, values):

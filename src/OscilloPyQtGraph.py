@@ -103,7 +103,7 @@ class Oscillograph(pg.PlotWidget):
         for index in range(0, self.count):
             self.plots[index].setData(self.waves[index].data)
         text = ['%s = %.5g' % (wase.name,wase.currV) for wase in self.waves]
-        text2 = 'IP1 = %.3g'%self.IPConvAdc2Torr(self.waves[0].currV)
+        text2 = 'IP1 = %.3g'%self.IPConvAdc2Torr(self.waves[5].currV)
         text.append(text2)
         self.plotItem.setTitle(text)
 

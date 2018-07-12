@@ -122,14 +122,15 @@ class App(QMainWindow):
         logging.info(log)
         
     def fleshRtData(self, data): 
-        values = struct.unpack('dddddd', data)         
-        values = [abs(number) for number in values]
+        values = struct.unpack('dddddd', data)
+        for i, row in enumerate(self.RtReadList.values()):
+            values[i] = values[i]*row['conversion']
         self.SaveRtData(values)
         #print(values)
         values[0] = self.filter.conv(values[0]) 
-        self.OscilPanel.setAllValue(values)
-        self.ControlPanel.setAllValue(values)  
-        
+        new_value = [values[1],values[2],values[5],values[3],values[4],values[0]]
+        self.ControlPanel.setAllValue(new_value) 
+        self.OscilPanel.setAllValue(new_value)         
  
 if __name__ == '__main__':
     app = QApplication(sys.argv)
