@@ -123,12 +123,14 @@ class App(QMainWindow):
         
     def fleshRtData(self, data): 
         values = struct.unpack('dddddd', data)
-        for i, row in enumerate(self.RtReadList.values()):
-            values[i] = values[i]*row['conversion']
+        #for i, row in enumerate(self.RtReadList.values()):
+        #    values[i] = values[i]*row['conversion']
+        values = [abs(number) for number in values]
+        values[4] = values[4]*1000000
+        new_value = [values[1],values[2],values[5],values[3],values[4],values[0]]
         self.SaveRtData(values)
         #print(values)
-        values[0] = self.filter.conv(values[0]) 
-        new_value = [values[1],values[2],values[5],values[3],values[4],values[0]]
+        new_value[5] = self.filter.conv(new_value[5])         
         self.ControlPanel.setAllValue(new_value) 
         self.OscilPanel.setAllValue(new_value)         
  
