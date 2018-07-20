@@ -207,11 +207,13 @@ class ControlPanel(QWidget):
          
         GroupBox = QGroupBox("Operate")
         GroupBox.setLayout(box)  
-        return GroupBox   
+        return GroupBox 
        
     def ManualModeEnable(self, flg = True):
         for name in self.manual.keys():
             self.manual[name].setVisible(flg)
+            val = self.meters[name].value()
+            self.manual[name].setValue(val)
         
     def setLabelInfo(self, GunNo, TableNo):
         text = 'Gun No:{0}\nTable:{1}'.format(GunNo, TableNo)

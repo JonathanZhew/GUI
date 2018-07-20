@@ -153,11 +153,21 @@ class QMeter(QWidget):
         
     def setValue(self, text, percent):
         self.editBox.setText(text)
-        self.progressBar.setValue(percent) 
+        self.progressBar.setValue(percent)
+
+    def str2float(self, str):
+        try:
+            return float(str)
+        except:
+            return 0.0
+
+    def value(self):
+        text = self.editBox.text()
+        return self.str2float(text)
 
     def setTicks(self, ticks):        
         self.scale.SetAxisText(ticks)
-     
+    
     def setSpecialTick(self, name, value, text, color):        
         self.scale.CustomerTicks[name] = CAxis(value, text, color)   
         
