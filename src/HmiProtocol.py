@@ -12,7 +12,7 @@ class CStructAck():
         if(len(frame)>32):
             self.data = frame[32:]
         else:   
-            self.data = None
+            self.data = b''
 class CStructSend():
     def __init__(self, head_section):
         head = struct.unpack('IIIIIIII', head_section[:32])        
@@ -26,6 +26,7 @@ class HmiProtocol():
         self.__Source     =0
         self.__Dest       =0
         self.__Sequence   =0
+        self.LoopBuffer   = b''
 
     def __make_frame(self, cmdId, arrBody, arrLen):
         frame = b'\x08\4\2\1'
@@ -61,26 +62,36 @@ class HmiProtocol():
 
     def RequestFrame(self, cmdId):
         return self.__make_frame(cmdId, b'', 0)
+    
 
     def parseAck(self, buffer):
         frames = []
-        
-        length = len(buffer)
-        while(length >=32):
+        self.LoopBuffer = self.LoopBuffer + buffer
+        TotalLen = len(self.LoopBuffer)
+        while(TotalLen >=32):
             try:
-                index = buffer.index(b'\x08\4\2\1')
+                index = self.LoopBuffer.index(b'\x08\4\2\1')
                 if index >=0:
-                    frame = CStructAck(buffer[index:])
-                    if frame.length <= length-32:
+                    self.LoopBuffer = self.LoopBuffer[index:]
+                    length= struct.unpack('I', self.LoopBuffer[16:20])[0]
+                    #frame = CStructAck(buffer[index:])
+                    if length > 1024:
+                        TotalLen = TotalLen - 20
+                        self.LoopBuffer = self.LoopBuffer[20:]
+                    elif length <= TotalLen-32:     
+                        frame = CStructAck(self.LoopBuffer[:length+32])                   
                         frames.append(frame)
-                    
-                    length = length - frame.length - 32
-                    if(length >= 32):
-                        buffer = buffer[frame.length + 32:]
-            except:
-                #print(length, buffer)
-                print('parseAck() cannot find start of frame')
-                return frames
+                        self.LoopBuffer = self.LoopBuffer[length + 32:]
+                        TotalLen = TotalLen - length - 32
+                    else:
+                        #find start mark, but not enough length wait next time
+                        print(TotalLen, "wait next time")
+                        TotalLen = 0
+            except:   
+                # Can not find start with 0x08040201 unload the buffer
+                print(TotalLen, "Can not find")
+                TotalLen = 0
+                self.LoopBuffer = bytearray(b'')
         return frames
     
     def unpack(self, type, buf, conversion=1):

@@ -38,7 +38,7 @@ class ControlPanel(QWidget):
         self.setLayout(Layout)
         self.timer = QTimer()
         self.timer.timeout.connect(self.timeout)
-        self.timer.start(500)      
+        self.timer.start(800)      
         self.percentage = 0
         self.isRuningTask = True
         self.HvStatus = 0
@@ -78,7 +78,9 @@ class ControlPanel(QWidget):
         return GroupBox  
     
     def IPConvAdc2Torr(self, val):
-        return 0.1**(11-(val/1024)*3.9)
+        x =  0.1**(11-(val/1024)*3.9)
+        g = float("{0:.3g}".format(x))
+        return g
     
     def IPConvTorr2Adc(self, val):
         tmp = log(val, 10)
@@ -190,8 +192,12 @@ class ControlPanel(QWidget):
         self.AutoStatuebar.setValue(50)
         
         self.labelInfo = QLabel('Gun No:ABC123\nTable:BEANCH008')
-        self.labelInfo.setFont(QFont("Calibri",18))
+        self.labelInfo.setFont(QFont("Calibri", 10))
         self.labelInfo.setStyleSheet("color: rgb(15,34,139);")
+        
+        self.statusInfo = QLabel('\tWellcom to use gun control system...')
+        self.statusInfo.setFont(QFont("Calibri",36))
+        self.statusInfo.setStyleSheet("color: rgb(15,34,139);")
         
         box =  QHBoxLayout();
         box.addWidget(self.led) 
@@ -201,7 +207,7 @@ class ControlPanel(QWidget):
         box.addWidget(self.btnTaskPause)
         box.addWidget(self.btnTaskPlay)      
         box.addWidget(self.AutoStatuebar) 
-        
+        box.addWidget(self.statusInfo)     
         box.addStretch(1)  
         box.addWidget(self.labelInfo)      
          
@@ -241,7 +247,7 @@ class ControlPanel(QWidget):
 
         self.cmdList.setItems('Emission','value', 'start')
         self.isRuningTask = True
-        self.timer.start(500)   
+        #self.timer.start(500)   
                 
     def clickedHvOn(self):       
         if QMessageBox.Yes == self.popMessage(): 
@@ -276,10 +282,10 @@ class ControlPanel(QWidget):
                 
         if val == STA_EMISS_ON:
             self.percentage = 100
-            self.timer.stop()
+            #self.timer.stop()
         elif val == STA_EMISS_OFF:
             self.percentage = 0
-            self.timer.stop()
+            #self.timer.stop()
         else:
             if self.isRuningTask == True:
                 self.percentage = (self.percentage+20)%100
@@ -289,7 +295,9 @@ class ControlPanel(QWidget):
         self.AutoStatuebar.setFormat(text)        
         self.AutoStatuebar.setValue(self.percentage)    
         
-        
-        
-        
+    def setStatusInfo(self, info):
+        #date = datetime.datetime.now()
+        #text = date.strftime(" %H:%M:%S ")+info
+        self.statusInfo.setText(info)
+ 
         

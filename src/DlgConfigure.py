@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QLineEdit, QGroupBox, QVBoxLayout, QDialog,\
     QPushButton, QHBoxLayout, QGridLayout, QLabel, QDoubleSpinBox, QMessageBox
 from QScientificSpinBox import QScientificSpinBox
 from PyQt5.QtCore import pyqtSlot, QTimer
+import logging
 
 class ConfigureData():
     def __init__(self, Messenger, Cmdlist):
@@ -23,10 +24,13 @@ class ConfigureData():
     
         self.requestAll()       
                 
-    def requestAll(self):
+    def requestAll(self):        
         for row in self.list.values():
             row['value'] = None
             self.comm.requestValue(row['read'])  
+            
+            log = 'request {0} cmd:{1:d}'.format(row['name'], row['read'])
+            logging.info(log)
             
     def isAvailable(self):
         if(len(self.settings) == self.list.values()):
@@ -141,6 +145,9 @@ class DlgConfigure(QDialog):
                 self.editBoxes[name].setEnabled(False)
             else:    
                 self.editBoxes[name].setValue(value)  
+                
+        if not self.btnApply.isEnabled():
+            self.cfgDat.requestAll()  
     
     @pyqtSlot()
     def chickbtnAplly(self):

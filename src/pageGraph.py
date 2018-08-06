@@ -6,7 +6,7 @@ Created on May 29, 2018
 from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QLabel, QLineEdit, QVBoxLayout,\
     QWidget, QFileDialog
 from PyQt5.QtCore import Qt
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QFont
 from OscilloPyQtGraph import Oscillograph
 import pyqtgraph as pg
@@ -18,9 +18,7 @@ class QOscilPanel():
     def __init__(self, ReadObjs):
         super(QOscilPanel, self).__init__()
         self.Objs = ReadObjs
-        self.flgSample = False
-        self.DelayCnt = 0
-        self.TrigerSample = 20
+        self.Trigerflg = False
         
         self.Panel = QHBoxLayout()
         self.btnSample = QPushButton('start')
@@ -60,15 +58,16 @@ class QOscilPanel():
         self.btnResetDat.clicked.connect(self.ClickResetDat)
         self.btnSaveImage.clicked.connect(self.ClickSaveImage)
         
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.RenewOscil)
+               
         self.ClickSampleStart()
 
     def setAllValue(self, values):
-        if(self.flgSample):
-            self.DelayCnt = self.DelayCnt+1
-            if(self.DelayCnt > self.TrigerSample):
-                self.DelayCnt = 0
-                self.Oscil.renew(values)    
-                self.Oscil.mydraw()
+        if self.Trigerflg:
+            self.Trigerflg = False
+            self.Oscil.renew(values)    
+            self.Oscil.mydraw()
     
     def ClickResetDat(self):
         self.Oscil.reset()
@@ -76,16 +75,17 @@ class QOscilPanel():
     def ClickSampleStart(self):
         if self.btnSample.text() == 'start':
             self.btnSample.setText('stop')
-            self.flgSample = True
-            st = int(self.editSampleRate.text())
-            st = st if st > 100 else 100
-            self.TrigerSample = int(st/100)
-            self.Oscil.SetSample(st)
+            ms = int(self.editSampleRate.text())
+            self.timer.start(ms) 
+            self.Oscil.SetSample(ms)            
             #print(self.editSampleRate.text())            
         else:           
             self.btnSample.setText('start')
-            self.flgSample = False     
+            self.timer.stop()
     
+    def RenewOscil(self):
+        self.Trigerflg = True        
+        
     def saveFileDialog(self, myfilter="All files (*.*)"):
         date = datetime.datetime.now()
         name = date.strftime("%Y-%m-%d_%H_%M_%S")
