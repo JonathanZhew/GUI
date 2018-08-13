@@ -68,7 +68,8 @@ class ControlPanel(QWidget):
                 SetBox.setDecimals(num)
                 SetBox.setRange(minV,maxV)
                 #(self, cmd, edit, type1, conversion):
-                SetBox.editingFinished.connect(partial(self.setDemand, SetBox, row))
+                #SetBox.returnPressed.connect(partial(self.setDemand, SetBox, row))
+                SetBox.lineEdit().returnPressed.connect(partial(self.setDemand, SetBox, row))
                 self.manual[name] = SetBox
                 gridBox.addWidget(SetBox, 1, i,  alignment=Qt.AlignCenter) 
         

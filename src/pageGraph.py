@@ -67,7 +67,7 @@ class QOscilPanel():
         if self.Trigerflg:
             self.Trigerflg = False
             self.Oscil.renew(values)    
-            self.Oscil.mydraw()
+            #self.Oscil.mydraw()
     
     def ClickResetDat(self):
         self.Oscil.reset()

@@ -88,10 +88,15 @@ class CMessenger(QThread):
     
     def setValue(self, cmd, value, vtype='d'):
         if not self.__isopen:
-            print('err401 port is not open setValue()', cmd, value)
-            return
+            txt = 'setValue() error port is not open setValue()'
+            print(txt)
+            logging.info(txt)
+            return             
         frame = self.maker.DemandFrame(cmd, value, vtype)
         self.SendQ.append(frame)
+        
+        txt = 'TX: set cmd {0:d} value {1}'.format(cmd, str(value))
+        logging.info(txt)
     
     def requestValue(self, cmd):
         frame = self.maker.RequestFrame(cmd)
